@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#f1f5f9" media="(prefers-color-scheme: light)">
+    <title>Конвертер валют | SYP • TRY • RUB • USD</title>
+    <style>
+        :root {
+            --bg: #0f172a; --surface: #1e293b; --surface2: #0f172a; --text: #e2e8f0; --text2: #cbd5e1;
+            --muted: #94a3b8; --border: #334155; --input-bg: #0f172a; --input-border: #334155;
+            --accent: #22c55e; --accent-hover: #16a34a; --danger: #ef4444; --warning: #f59e0b;
+            --shadow: 0 20px 40px rgba(0,0,0,0.5); --taqwa-color: #fbbf24;
+            --whatsapp-color: #25D366; --btn-bg: #334155; --btn-hover: #475569;
+        }
+        .light {
+            --bg: #f1f5f9; --surface: #ffffff; --surface2: #f8fafc; --text: #0f172a; --text2: #334155;
+            --muted: #64748b; --border: #e2e8f0; --input-bg: #f1f5f9; --input-border: #cbd5e1;
+            --accent: #16a34a; --accent-hover: #15803d; --danger: #dc2626; --warning: #d97706;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08); --taqwa-color: #b45309;
+            --btn-bg: #e2e8f0; --btn-hover: #cbd5e1;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); min-height:100vh; display:flex; align-items:center; justify-content:center; padding: 1rem; color: var(--text); transition: background 0.3s, color 0.3s; direction: ltr; }
+        body[dir="rtl"] { direction: rtl; font-family: 'Noto Naskh Arabic', serif; }
+        .dashboard { width:100%; max-width:900px; background:var(--surface); border-radius:1.5rem; padding:1.5rem; box-shadow:var(--shadow); transition: background 0.3s, box-shadow 0.3s; }
+        .taqwa-banner { background:linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.06)); border:1px solid rgba(251,191,36,0.35); border-radius:1rem; padding:0.8rem; margin-bottom:1.5rem; text-align:center; }
+        .taqwa-arabic { font-family:'Noto Naskh Arabic', serif; font-size:1.2rem; font-weight:600; color:var(--taqwa-color); direction:rtl; }
+        .taqwa-russian { font-size:0.75rem; color:var(--text2); margin-top:0.3rem; font-style:italic; opacity:0.9; }
+        .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
+        .header h1 { font-size:1.4rem; font-weight:700; margin:0; }
+        .controls { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
+        .theme-toggle, .lang-toggle { background:var(--surface2); border:1px solid var(--border); border-radius:2rem; padding:0.3rem; display:flex; gap:0.2rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+        .theme-btn, .lang-btn { width:auto; min-width:36px; height:34px; border-radius:1.5rem; border:none; background:transparent; font-size:0.85rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 0.8rem; color:var(--text); transition:0.25s ease; }
+        .theme-btn:hover:not(.active), .lang-btn:hover:not(.active) { background:var(--btn-hover); }
+        .theme-btn.active, .lang-btn.active { background:var(--accent); color:#fff; box-shadow:0 4px 10px rgba(34,197,94,0.3); transform:scale(1.02); }
+        .live { display:flex; align-items:center; gap:0.5rem; background:var(--surface2); padding:0.5rem 1rem; border-radius:2rem; font-size:0.75rem; font-weight:600; color:var(--text2); border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+        .dot { width:10px; height:10px; background:var(--accent); border-radius:50%; animation:pulse 1.5s infinite; }
+        .dot.offline { background:var(--danger); animation:none; }
+        @keyframes pulse { 0%,100%{opacity:0.5;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }
+        .layout-wrapper { display:flex; flex-direction:column; gap:1.5rem; }
+        @media (min-width:768px) { .layout-wrapper { flex-direction:row; align-items:flex-start; } .converter { flex:1.5; margin-bottom:0 !important; } .fuel-section { flex:1; } }
+        .converter { background:var(--surface2); border-radius:1.2rem; padding:1.2rem; border:1px solid var(--border); margin-bottom:1.5rem; position:relative; min-height:250px; }
+        .converter-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; flex-wrap:wrap; gap: 0.8rem; }
+        .converter-header h3 { font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin:0; }
+        .converter-header-actions { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; }
+        .clear-btn { background:var(--danger); border:none; color:#fff; padding:0.3rem 0.8rem; border-radius:0.5rem; font-size:0.75rem; font-weight:600; cursor:pointer; transition:0.2s; box-shadow:0 2px 6px rgba(239,68,68,0.3); }
+        .clear-btn:hover { opacity:0.8; transform:translateY(-1px); }
+        .clear-cache-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:0.3rem 0.8rem; border-radius:0.5rem; font-size:0.75rem; font-weight:600; cursor:pointer; transition:0.2s; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+        .clear-cache-btn:hover { background:var(--warning); border-color:var(--warning); color:#fff; transform:translateY(-1px); }
+        .currency-row { display:flex; align-items:flex-start; gap:0.8rem; margin-bottom:1rem; }
+        .currency-row:last-child { margin-bottom:0; }
+        body[dir="rtl"] .currency-row { flex-direction:row-reverse; }
+        .label { width:70px; font-weight:700; font-size:0.95rem; padding-top:0.6rem; }
+        body[dir="rtl"] .label { text-align:right; }
+        
+        /* Стили для интерактивного SYP */
+        .syp-clickable { cursor: pointer; user-select: none; -webkit-user-select: none; transition: color 0.2s, transform 0.2s; color: var(--accent); }
+        .syp-clickable:hover { filter: brightness(1.2); }
+        .syp-clickable:active { transform: scale(0.95); }
+
+        .input-wrapper { flex:1; display:flex; flex-direction:column; gap:0.3rem; }
+        .main-input { width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:0.8rem; padding:0.8rem 1rem; font-size:1.05rem; font-weight:600; color:var(--text); outline:none; transition:all 0.2s ease; }
+        .main-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(34,197,94,0.15); }
+        body[dir="rtl"] .main-input { text-align:right; }
+        .sub-row { display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; margin-top:0.3rem; min-height:24px; flex-wrap:wrap; }
+        .rate-text { font-size:0.75rem; color:var(--muted); font-weight:500; padding:0 0.2rem; }
+        .loading-pulse { display:inline-block; animation:pulse-opacity 1.5s infinite; color:var(--warning); font-weight:600; }
+        @keyframes pulse-opacity { 0%,100%{opacity:0.4;} 50%{opacity:1;} }
+        .fuel-section { background:var(--surface2); border-radius:1.2rem; padding:1.2rem; border:1px solid var(--border); }
+        .fuel-header { font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:1rem; margin-top:0; font-weight:700; cursor:pointer; }
+        .fuel-cards { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+        .fuel-card { background:var(--input-bg); border-radius:0.8rem; padding:0.8rem; border:1px solid var(--input-border); }
+        .fuel-name { font-size:0.85rem; font-weight:600; color:var(--text); margin-bottom:0.3rem; }
+        .fuel-price { font-size:0.75rem; color:var(--text2); font-weight:500; }
+        .fuel-quantity { font-size:0.8rem; color:var(--accent); margin-top:0.5rem; font-weight:700; }
+        .footer { display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--muted); margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border); flex-wrap:wrap; gap:1rem; }
+        .footer-left { display:flex; align-items:center; gap:1rem; }
+        .credit { display:flex; align-items:center; gap:1.2rem; flex-wrap:wrap; }
+        .whatsapp-link { color:var(--whatsapp-color); text-decoration:none; font-weight:600; display:flex; align-items:center; gap:0.4rem; }
+        .share-btn-main { background:var(--accent); color:white; border:none; padding:0.5rem 1.2rem; border-radius:2rem; font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.5rem; transition:0.2s; box-shadow:0 4px 12px rgba(34,197,94,0.3); }
+        .share-btn-main:hover { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 6px 15px rgba(34,197,94,0.4); }
+        .share-btn-main svg { width:16px; height:16px; stroke-width: 2.5px; }
+        
+        .toast { position:fixed; bottom:4rem; left:50%; transform:translateX(-50%) translateY(100px); background:var(--accent); color:#fff; padding:0.6rem 1.2rem; border-radius:2rem; font-size:0.85rem; font-weight:500; z-index:1000; transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275); pointer-events:none; box-shadow:0 10px 20px rgba(34,197,94,0.3); text-align: center; }
+        .toast.error { background: var(--warning); box-shadow:0 10px 20px rgba(245,158,11,0.3); }
+        .toast.show { transform:translateX(-50%) translateY(0); }
+        @keyframes shimmer { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
+        .skeleton-row { display:flex; align-items:center; gap:0.8rem; margin-bottom:1rem; }
+        .skeleton-box { background:linear-gradient(90deg,var(--input-bg) 25%,var(--border) 50%,var(--input-bg) 75%); background-size:400px 100%; animation:shimmer 1.5s infinite; border-radius:0.8rem; height:45px; flex:1; }
+        .skeleton-label { width:70px; height:25px; background:linear-gradient(90deg,var(--input-bg) 25%,var(--border) 50%,var(--input-bg) 75%); background-size:400px 100%; animation:shimmer 1.5s infinite; border-radius:0.4rem; }
+        @media (max-width:480px) { .header { flex-direction:column; align-items:flex-start; gap:1.2rem; } .controls { width:100%; justify-content:space-between; } .footer { flex-direction:column; align-items:center; text-align:center; gap:1.5rem; } .footer-left { flex-direction:column; gap:0.5rem; } .credit { justify-content:center; } }
+
+        #sypModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; justify-content:center; align-items:center; backdrop-filter:blur(4px); }
+        #sypModal.show { display:flex; }
+        .modal-content { background:var(--surface); padding:1.5rem; border-radius:1.5rem; max-width:320px; width:90%; text-align:center; box-shadow:var(--shadow); border:1px solid var(--border); }
+        .modal-content h3 { margin-top:0; color:var(--text); font-size:1.2rem; }
+        .modal-content .rate-box { background:var(--input-bg); padding:1rem; border-radius:1rem; margin:1rem 0; border:1px solid var(--border); }
+        .modal-content .label { font-size:0.8rem; color:var(--muted); text-transform:uppercase; }
+        .modal-content .value { font-size:2rem; font-weight:700; color:var(--text); }
+        .modal-content .status { font-size:0.8rem; color:var(--muted); margin-top:0.5rem; }
+        .modal-content .refresh-btn { background:var(--surface2); border:1px solid var(--border); border-radius:2rem; padding:0.3rem 0.8rem; color:var(--text); cursor:pointer; font-size:0.8rem; transition:0.2s; }
+        .modal-content .refresh-btn:hover { background:var(--btn-hover); }
+        .modal-content .close-btn { margin-top:1rem; padding:0.5rem 1.5rem; border:none; border-radius:2rem; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; transition:0.2s; }
+        .modal-content .close-btn:hover { background:var(--accent-hover); }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="taqwa-banner">
+        <div class="taqwa-arabic" lang="ar">ٱتَّقُوا۟ ٱللَّهَ حَيْثُمَا كُنتُمْ</div>
+        <div class="taqwa-russian" data-i18n="taqwa_ru">Бойтесь Аллаха, где бы вы ни были</div>
+    </div>
+    
+    <div class="header">
+        <h1 data-i18n="app_title">💱 Конвертер</h1>
+        <div class="controls">
+            <div class="theme-toggle" id="themeToggle">
+                <button class="theme-btn" data-theme="dark">🌙</button>
+                <button class="theme-btn" data-theme="light">☀️</button>
+            </div>
+            <div class="lang-toggle" id="langToggle">
+                <button class="lang-btn" data-lang="ru">RU</button>
+                <button class="lang-btn" data-lang="ar">عربي</button>
+            </div>
+        </div>
+        <div class="live"><span class="dot" id="statusDot"></span><span id="statusText" data-i18n="loading">Загрузка...</span></div>
+    </div>
+    
+    <div class="layout-wrapper">
+        <div class="converter">
+            <div class="converter-header">
+                <h3 data-i18n="enter_amount">Введите сумму</h3>
+                <div class="converter-header-actions">
+                    <button class="clear-cache-btn" id="clearCacheBtn" data-i18n="clear_cache">Сбросить кэш 🗑️</button>
+                    <button class="clear-btn" id="clearBtn" data-i18n="clear">Очистить ✕</button>
+                </div>
+            </div>
+            <div id="converterFields"></div>
+        </div>
+        
+        <div class="fuel-section">
+            <div class="fuel-header" id="fuelToggle" data-i18n="fuel_title">⛽ Топливо ▼</div>
+            <div class="fuel-cards" id="fuelContainer"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-left">
+            <span data-i18n="footer_currencies">SYP · TRY · RUB · USD</span>
+            <span id="updateTime">—</span>
+        </div>
+        <div class="credit">
+            <a href="https://wa.me/message/5BNQS73OKP3CI1" class="whatsapp-link" target="_blank">💬 Salim Nashho</a>
+            <button class="share-btn-main" id="shareRatesBtn">
+                <span data-i18n="share">Поделиться</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="sypModal">
+    <div class="modal-content">
+        <h3>🇸🇾 Курс USD → SYP</h3>
+        <div class="rate-box">
+            <div class="label">Курс покупки</div>
+            <div id="buyRateDisplay" class="value">...</div>
+        </div>
+        <div id="modalStatus" class="status">Получение данных...</div>
+        <div style="margin-top:0.5rem;">
+            <button class="refresh-btn" id="modalRefreshBtn">🔄 Обновить</button>
+        </div>
+        <button class="close-btn" id="sypModalClose">Закрыть</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    const translations = {
+        ru: {
+            app_title: '💱 Конвертер', enter_amount: 'Введите сумму', clear: 'Очистить',
+            clear_cache: 'Сбросить кэш 🗑️', cache_cleared: 'Кэш успешно очищен', no_internet: 'Нет интернета. Подключитесь к сети!',
+            loading: 'Загрузка...', online: 'Онлайн ✓', offline: 'Оффлайн ⚠️', waiting_data: 'Ожидание...',
+            fuel_title: '⛽ Топливо ▼', footer_currencies: 'SYP · TRY · RUB · USD',
+            share: 'Поделиться', taqwa_ru: 'Бойтесь Аллаха, где бы вы ни были',
+            usd_full: 'Доллар США', syp_full: 'Сирийский фунт', try_full: 'Турецкая лира', rub_full: 'Российский рубль',
+            syp_market_label: ' (рынок)', syp_hint: 'Нажмите или удерживайте для курса покупки',
+            fuel_90: 'Бензин А-90', fuel_95: 'Бензин А-95',
+            fuel_diesel: 'Дизель (мазут)', fuel_gas: 'Газовый баллон', fuel_unit_l: 'л', fuel_unit_piece: 'шт',
+            fuel_enter: 'Введите сумму', fuel_amount: 'На {usd}:',
+            share_text: 'Курсы:\nSYP рынок: {syp} за 1 USD\nTRY: {try} за 1 USD\nRUB: {rub} за 1 USD',
+            placeholder: '0', force_updated: 'Курсы обновлены!',
+            no_data: 'Нет данных'
+        },
+        ar: {
+            app_title: '💱 محول العملات', enter_amount: 'أدخل المبلغ', clear: 'مسح',
+            clear_cache: 'مسح التخزين 🗑️', cache_cleared: 'تم مسح التخزين المؤقت!', no_internet: 'لا يوجد اتصال بالإنترنت! يرجى الاتصال.',
+            loading: 'جاري التحميل...', online: 'متصل ✓', offline: 'غير متصل ⚠️', waiting_data: 'في انتظار...',
+            fuel_title: '⛽ الوقود ▼', footer_currencies: 'SYP · TRY · RUB · USD',
+            share: 'مشاركة', taqwa_ru: 'اتقوا الله حيثما كنتم',
+            usd_full: 'دولار أمريكي', syp_full: 'ليرة سورية', try_full: 'ليرة تركية', rub_full: 'روبل روسي',
+            syp_market_label: ' (السوق)', syp_hint: 'انقر أو اضغط مطولاً لسعر الشراء',
+            fuel_90: 'بنزين 90', fuel_95: 'بنزين 95',
+            fuel_diesel: 'ديزل (مازوت)', fuel_gas: 'أسطوانة غاز', fuel_unit_l: 'لتر', fuel_unit_piece: 'قطعة',
+            fuel_enter: 'أدخل المبلغ', fuel_amount: 'بـ {usd}:',
+            share_text: 'أسعار الصرف:\nالليرة السورية (السوق): {syp} لكل ١ دولار\nالليرة التركية: {try} لكل ١ دولار\nالروبل: {rub} لكل ١ دولار',
+            placeholder: '٠', force_updated: 'تم تحديث الأسعار!',
+            no_data: 'لا توجد بيانات'
+        }
+    };
+
+    const CURRENCIES = [
+        { code: 'USD', nameKey: 'usd_full', sym: '$', icon: '$', isMarket: false },
+        { code: 'SYP', nameKey: 'syp_full', sym: '£', icon: '£', isMarket: true, marketLabelKey: 'syp_market_label' },
+        { code: 'TRY', nameKey: 'try_full', sym: '₺', icon: '₺', isMarket: false },
+        { code: 'RUB', nameKey: 'rub_full', sym: '₽', icon: '₽', isMarket: false }
+    ];
+    const FUEL = [
+        { nameKey: 'fuel_90', usd: 1.10, icon: '⛽', unitKey: 'fuel_unit_l' },
+        { nameKey: 'fuel_95', usd: 1.15, icon: '⛽', unitKey: 'fuel_unit_l' },
+        { nameKey: 'fuel_diesel', usd: 0.88, icon: '🛢️', unitKey: 'fuel_unit_l' },
+        { nameKey: 'fuel_gas', usd: 12.50, icon: '🔥', unitKey: 'fuel_unit_piece' }
+    ];
+
+    const CACHE_KEY = 'currency_converter_rates_final_v15';
+    const CACHE_DURATION = 24 * 60 * 60 * 1000;
+    const SYP_API_URL = 'https://sp-today-api.vercel.app/currency/USD';
+    const SYP_API_URLS = [
+        SYP_API_URL,
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(SYP_API_URL)
+    ];
+
+    let rates = { USD:1, TRY:null, RUB:null };
+    let prevRates = { USD:1, TRY:null, RUB:null };
+    let sypMarketRate = null;
+    let prevSypMarketRate = null;
+    let lastUpdate = null;
+    let activeSource = null;
+    let usdAmount = null;
+    let isFetching = false;
+
+    const $ = id => document.getElementById(id);
+    const statusText = $('statusText'), statusDot = $('statusDot'), updateTime = $('updateTime');
+    let currentLang = 'ru';
+
+    const fetchWithTimeout = async (url, options = {}, ms = 6000) => {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('Timeout')), ms);
+            fetch(url, options).then(res => {
+                clearTimeout(timer);
+                resolve(res);
+            }).catch(err => {
+                clearTimeout(timer);
+                reject(err);
+            });
+        });
+    };
+
+    function t(key, params = {}) {
+        let text = translations[currentLang][key] || key;
+        for (const [k, v] of Object.entries(params)) text = text.replace(`{${k}}`, v);
+        return text;
+    }
+
+    function cleanInput(raw) {
+        if (!raw) return '';
+        let str = String(raw).replace(/٫/g, '.').replace(/٬/g, '').replace(/,/g, '.');
+        const arDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+        for(let i=0; i<10; i++) str = str.split(arDigits[i]).join(i);
+        return str.replace(/[^\d.\-]/g, '');
+    }
+
+    function toLocalizedStr(str) {
+        if (currentLang !== 'ar') return String(str);
+        const arDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+        return String(str).replace(/[0-9]/g, w => arDigits[w]).replace(/\./g, '٫');
+    }
+
+    function applyLanguage() {
+        document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.getAttribute('data-i18n')));
+        document.body.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        document.body.lang = currentLang;
+        const savedValues = {};
+        CURRENCIES.forEach(c => {
+            const inp = $('inp-'+c.code);
+            if (inp) savedValues[c.code] = cleanInput(inp.value);
+        });
+        buildConverter();
+        buildFuel();
+        CURRENCIES.forEach(c => {
+            const inp = $('inp-'+c.code);
+            if (inp && savedValues[c.code] !== undefined && savedValues[c.code] !== '') {
+                inp.value = toLocalizedStr(savedValues[c.code]);
+            }
+        });
+        if (activeSource && savedValues[activeSource]) convert(activeSource, savedValues[activeSource]);
+        else updateFuel(null);
+        if (lastUpdate) {
+            updateTime.textContent = lastUpdate.toLocaleTimeString(currentLang === 'ar' ? 'ar-SY' : 'ru-RU', {hour:'2-digit',minute:'2-digit'});
+        }
+        $('fuelToggle').textContent = t('fuel_title');
+        updateNetworkIndicator(navigator.onLine);
+        localStorage.setItem('lang', currentLang);
+    }
+
+    function updateNetworkIndicator(online) {
+        if (online) { statusDot.classList.remove('offline'); statusText.textContent = t('online'); }
+        else { statusDot.classList.add('offline'); statusText.textContent = t('offline'); }
+    }
+
+    function loadCache() {
+        try {
+            const raw = localStorage.getItem(CACHE_KEY);
+            if (!raw) return false;
+            const data = JSON.parse(raw);
+            if (data.rates && data.timestamp && (Date.now() - data.timestamp < CACHE_DURATION)) {
+                rates.TRY = data.rates.TRY ?? null;
+                rates.RUB = data.rates.RUB ?? null;
+                sypMarketRate = data.marketSYP ?? null;
+                prevRates = {...rates};
+                prevSypMarketRate = sypMarketRate;
+                lastUpdate = new Date(data.timestamp);
+                return true;
+            }
+        } catch(e) {}
+        return false;
+    }
+
+    function saveCache() {
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                rates: { TRY: rates.TRY, RUB: rates.RUB }, marketSYP: sypMarketRate,
+                timestamp: lastUpdate ? lastUpdate.getTime() : Date.now()
+            }));
+        } catch(e) {}
+    }
+
+    function format(num, code) {
+        if (num == null || !isFinite(num)) return '...';
+        const d = code === 'SYP' ? 2 : 4;
+        return num.toLocaleString(currentLang === 'ar' ? 'ar-SY' : 'ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+
+    function trend(code) {
+        let c, p;
+        if (code === 'SYP') { c = sypMarketRate; p = prevSypMarketRate; } 
+        else { c = rates[code]; p = prevRates[code]; }
+        if (!c || !p || Math.abs(c-p)<0.0001) return '';
+        return c > p ? ' ↑' : ' ↓';
+    }
+
+    function effective(code) {
+        if (code === 'SYP') return sypMarketRate;
+        if (code === 'USD') return 1;
+        return rates[code];
+    }
+
+    function applySypRate(rate) {
+        if (rate == null || !isFinite(rate)) return false;
+        const sourceCode = activeSource;
+        const sourceInput = sourceCode ? $('inp-'+sourceCode) : null;
+        const sourceValue = sourceInput ? sourceInput.value : '';
+        prevSypMarketRate = sypMarketRate;
+        sypMarketRate = rate;
+        lastUpdate = new Date();
+        saveCache();
+        buildConverter();
+        if (sourceCode && sourceValue) {
+            const inp = $('inp-'+sourceCode);
+            if (inp) {
+                inp.value = sourceValue;
+                convert(sourceCode, sourceValue);
+            }
+        }
+        updateTime.textContent = lastUpdate.toLocaleTimeString(currentLang === 'ar' ? 'ar-SY' : 'ru-RU', {hour:'2-digit',minute:'2-digit'});
+        return true;
+    }
+
+    function showToast(msg, isError = false) {
+        const t = $('toast'); 
+        t.textContent = msg; 
+        if (isError) t.classList.add('error'); else t.classList.remove('error');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function buildConverter() {
+        const container = $('converterFields');
+        if (!container) return;
+        let focusedId = null;
+        if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+            focusedId = document.activeElement.id;
+        }
+        let html = '';
+        CURRENCIES.forEach(c => {
+            const rate = effective(c.code);
+            let rateDisplay;
+            if (rate !== null) {
+                rateDisplay = `${toLocalizedStr('1')} USD = ${format(rate, c.code)} ${c.sym}${trend(c.code)}`;
+            } else {
+                rateDisplay = `<span style="color: var(--danger); font-size: 0.8rem; font-weight: bold;">${t('no_data')}</span>`;
+            }
+            const label = c.marketLabelKey ? t(c.marketLabelKey) : '';
+            
+            // Если это SYP, добавляем специальные стили и ID для привязки событий клика
+            const isSyp = c.code === 'SYP';
+            const labelClass = isSyp ? 'label syp-clickable' : 'label';
+            const labelId = isSyp ? 'id="sypLabelTrigger"' : '';
+            const tooltip = isSyp ? `title="${t('syp_hint')}"` : '';
+
+            html += `<div class="currency-row">
+                <div class="${labelClass}" ${labelId} ${tooltip}>${c.icon} ${c.code}${label}</div>
+                <div class="input-wrapper">
+                    <input type="text" inputmode="decimal" class="main-input" id="inp-${c.code}" placeholder="${t('placeholder')}" data-currency="${c.code}">
+                    <div class="sub-row">
+                        <div class="rate-text" id="sub-${c.code}">${rateDisplay}</div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+        CURRENCIES.forEach(c => {
+            const inp = $('inp-'+c.code);
+            if (inp) inp.addEventListener('input', e => convert(c.code, e.target.value));
+        });
+        
+        attachSypListeners(); // Привязываем события удержания на новую кнопку
+        
+        if (focusedId) {
+            const el = $(focusedId);
+            if (el) el.focus();
+        }
+    }
+
+    function buildFuel() {
+        let html = '';
+        FUEL.forEach(f => {
+            const id = f.nameKey.replace(/\s/g,'');
+            const priceStr = toLocalizedStr(f.usd.toFixed(2));
+            html += `<div class="fuel-card">
+                <div class="fuel-name">${f.icon} ${t(f.nameKey)}</div>
+                <div class="fuel-price">$${priceStr}</div>
+                <div class="fuel-quantity" id="fuel-qty-${id}">${t('fuel_enter')}</div>
+            </div>`;
+        });
+        $('fuelContainer').innerHTML = html;
+        if (usdAmount != null) updateFuel(usdAmount);
+    }
+
+    function convert(from, raw) {
+        activeSource = from; 
+        const rate = effective(from);
+        if (rate === null) return; 
+        const cleaned = cleanInput(raw);
+        if (cleaned === '' || cleaned === '-') {
+            CURRENCIES.forEach(c => { if (c.code !== from) { const inp = $('inp-'+c.code); if (inp) inp.value = ''; } });
+            updateFuel(null); return;
+        }
+        const val = parseFloat(cleaned);
+        if (isNaN(val) || val < 0 || !isFinite(val) || Math.abs(val) > 1e12) { updateFuel(null); return; }
+        const usd = from === 'USD' ? val : val / rate;
+        if (!isFinite(usd)) { updateFuel(null); return; }
+        CURRENCIES.forEach(c => {
+            if (c.code === from) return;
+            const tr = effective(c.code);
+            if (tr === null) return;
+            const res = c.code === 'USD' ? usd : usd * tr;
+            const inp = $('inp-'+c.code);
+            if (inp) {
+                let valStr;
+                if (c.code === 'SYP') {
+                    valStr = res.toFixed(2);
+                } else {
+                    const isWhole = res % 1 === 0;
+                    valStr = isWhole ? res.toString() : res.toFixed(4);
+                }
+                inp.value = toLocalizedStr(valStr);
+            }
+        });
+        updateFuel(usd);
+    }
+
+    $('clearBtn').addEventListener('click', () => {
+        CURRENCIES.forEach(c => { const inp = $('inp-'+c.code); if (inp) inp.value = ''; });
+        activeSource = null; updateFuel(null);
+    });
+
+    $('clearCacheBtn').addEventListener('click', () => {
+        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem('last_update_date');
+        
+        rates = { USD:1, TRY:null, RUB:null };
+        prevRates = { USD:1, TRY:null, RUB:null };
+        sypMarketRate = null;
+        prevSypMarketRate = null;
+        lastUpdate = null;
+        updateTime.textContent = '—';
+        
+        CURRENCIES.forEach(c => { const inp = $('inp-'+c.code); if (inp) inp.value = ''; });
+        activeSource = null;
+        updateFuel(null);
+        buildConverter();
+        
+        showToast(t('cache_cleared'));
+        
+        if (navigator.onLine) {
+            fetchRates();
+        }
+    });
+
+    function updateFuel(usd) {
+        usdAmount = usd;
+        FUEL.forEach(f => {
+            const el = document.getElementById('fuel-qty-'+f.nameKey.replace(/\s/g,''));
+            if (!el) return;
+            if (usd == null || !isFinite(usd) || usd <= 0) { el.textContent = t('fuel_enter'); return; }
+            const qty = usd / f.usd; const unit = t(f.unitKey);
+            const display = f.unitKey === 'fuel_unit_piece' ? Math.floor(qty).toString() : qty.toFixed(2);
+            const qtyStr = toLocalizedStr(display);
+            const usdStr = toLocalizedStr(usd.toFixed(2));
+            el.textContent = t('fuel_amount', { usd: usdStr }) + ` ${qtyStr} ${unit}`;
+        });
+    }
+
+    // ========= ЗАГРУЗКА КУРСОВ =========
+    async function fetchSypData() {
+        for (const url of SYP_API_URLS) {
+            try {
+                const resp = await fetchWithTimeout(url, {}, 7000);
+                if (!resp.ok) continue;
+                return await resp.json();
+            } catch(e) {
+                console.warn('SYP fetch error:', e);
+            }
+        }
+        return null;
+    }
+
+    async function fetchSYP() {
+        const data = await fetchSypData();
+        if (!data) return null;
+
+        const raw = data.buy ?? data.sell ?? data.market ?? data.price ?? data.rate;
+        return parseSypRate(raw);
+    }
+
+    function parseSypRate(raw) {
+        if (raw == null) return null;
+        const clean = String(raw).replace(/,/g, '');
+        const rate = parseInt(clean, 10);
+        if (!isNaN(rate) && rate >= 5000 && rate <= 50000) {
+            return rate / 100;
+        }
+        return null;
+    }
+
+    async function fetchOfficial() {
+        const url = 'https://api.exchangerate-api.com/v4/latest/USD';
+        try {
+            const resp = await fetchWithTimeout(url, {}, 5000);
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.rates) {
+                    return { TRY: data.rates.TRY ?? null, RUB: data.rates.RUB ?? null };
+                }
+            }
+        } catch(e) { console.warn('Official rates fetch error:', e); }
+        return null;
+    }
+
+    async function fetchRates(force = false) {
+        if (!navigator.onLine) { updateNetworkIndicator(false); return; }
+        isFetching = true;
+        statusText.textContent = t('loading');
+        prevRates = {...rates};
+        prevSypMarketRate = sypMarketRate;
+        const [syp, official] = await Promise.all([fetchSYP(), fetchOfficial()]);
+        if (official) {
+            rates.TRY = official.TRY;
+            rates.RUB = official.RUB;
+        }
+        if (syp !== null) {
+            sypMarketRate = syp;
+        }
+        isFetching = false;
+        if (syp !== null || official) {
+            lastUpdate = new Date();
+            saveCache();
+            updateNetworkIndicator(true);
+            if (force) showToast(t('force_updated'));
+        } else {
+            statusText.textContent = t('offline');
+        }
+        const sourceCode = activeSource;
+        const sourceInput = sourceCode ? $('inp-'+sourceCode) : null;
+        const sourceValue = sourceInput ? sourceInput.value : '';
+        buildConverter();
+        if (sourceCode && sourceValue) {
+            const inp = $('inp-'+sourceCode);
+            if (inp) {
+                inp.value = sourceValue;
+                convert(sourceCode, sourceValue);
+            }
+        }
+        if (lastUpdate) {
+            updateTime.textContent = lastUpdate.toLocaleTimeString(currentLang === 'ar' ? 'ar-SY' : 'ru-RU', {hour:'2-digit',minute:'2-digit'});
+        }
+    }
+
+    // ========= ФУНКЦИИ ДЛЯ СИРИЙСКОЙ МЕТКИ (удержание) =========
+    async function fetchSypBuyRate() {
+        const data = await fetchSypData();
+        if (!data) return null;
+
+        const rawBuy = data.buy || (data.currency && data.currency.buy) || (data.data && data.data.buy);
+        const buyNum = parseSypRate(rawBuy);
+        if (buyNum !== null) {
+            applySypRate(buyNum);
+            return buyNum.toFixed(2);
+        }
+        return null;
+    }
+
+    async function refreshModal() {
+        const display = $('buyRateDisplay');
+        const status = $('modalStatus');
+        display.textContent = '...';
+        status.textContent = 'Обновление...';
+        status.style.color = 'var(--muted)';
+        const formatted = await fetchSypBuyRate();
+        if (formatted !== null) {
+            display.textContent = formatted;
+            status.textContent = 'Данные актуальны';
+            status.style.color = '#27ae60';
+        } else {
+            display.textContent = '---';
+            status.textContent = 'Ошибка загрузки';
+            status.style.color = '#c0392b';
+        }
+    }
+
+    async function showSypModal() {
+        const modal = $('sypModal');
+        modal.classList.add('show');
+        await refreshModal();
+    }
+
+    let longPressTimer = null;
+    let isLongPress = false;
+
+    function startLongPress(e) {
+        if (!navigator.onLine) return;
+        isLongPress = false;
+        if (longPressTimer) clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            showSypModal();
+        }, 600);
+    }
+
+    function endLongPress(e) {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        
+        // Если курсор просто ушел с элемента, отменяем действие и не показываем Toast
+        if (e.type === 'mouseleave' || e.type === 'touchcancel') {
+            isLongPress = false;
+            return;
+        }
+
+        if (!isLongPress) {
+            if (!navigator.onLine) {
+                showToast(t('no_internet'), true);
+                return;
+            }
+            const rate = sypMarketRate;
+            if (rate !== null) {
+                showToast(`🇸🇾 Курс SYP: ${rate.toLocaleString()} за 1 USD`);
+            } else {
+                showToast('❌ Курс SYP не загружен', true);
+            }
+        }
+        isLongPress = false;
+    }
+
+    function attachSypListeners() {
+        const sypBtn = $('sypLabelTrigger');
+        if (!sypBtn) return;
+        sypBtn.addEventListener('touchstart', startLongPress, { passive: true });
+        sypBtn.addEventListener('touchend', endLongPress, { passive: true });
+        sypBtn.addEventListener('touchcancel', endLongPress, { passive: true });
+        sypBtn.addEventListener('mousedown', startLongPress);
+        sypBtn.addEventListener('mouseup', endLongPress);
+        sypBtn.addEventListener('mouseleave', endLongPress);
+    }
+
+    $('sypModalClose').addEventListener('click', () => {
+        $('sypModal').classList.remove('show');
+    });
+    $('sypModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            $('sypModal').classList.remove('show');
+        }
+    });
+    
+    $('modalRefreshBtn').addEventListener('click', (e) => {
+        if (!navigator.onLine) {
+            e.preventDefault();
+            showToast(t('no_internet'), true);
+            return;
+        }
+        refreshModal();
+    });
+
+    // ========= ОСТАЛЬНЫЕ КНОПКИ =========
+    const themeToggle = $('themeToggle');
+    function setTheme(t) {
+        document.body.classList.toggle('light', t==='light');
+        themeToggle.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        themeToggle.querySelector(`[data-theme="${t}"]`).classList.add('active');
+        localStorage.setItem('theme', t);
+    }
+    themeToggle.addEventListener('click', e => { const btn = e.target.closest('.theme-btn'); if (btn) setTheme(btn.dataset.theme); });
+    setTheme(localStorage.getItem('theme') || 'dark');
+
+    const langToggle = $('langToggle');
+    function setLang(l) {
+        currentLang = l;
+        langToggle.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        langToggle.querySelector(`[data-lang="${l}"]`).classList.add('active');
+        applyLanguage();
+    }
+    langToggle.addEventListener('click', e => { const btn = e.target.closest('.lang-btn'); if (btn) setLang(btn.dataset.lang); });
+    const savedLang = localStorage.getItem('lang') || 'ru';
+    currentLang = savedLang; langToggle.querySelector(`[data-lang="${savedLang}"]`).classList.add('active');
+
+    $('fuelToggle').addEventListener('click', () => {
+        const el = $('fuelContainer');
+        el.style.display = el.style.display === 'none' ? '' : 'none';
+    });
+    
+    document.querySelector('.whatsapp-link').addEventListener('click', (e) => {
+        if (!navigator.onLine) {
+            e.preventDefault();
+            showToast(t('no_internet'), true);
+        }
+    });
+
+    $('shareRatesBtn').addEventListener('click', (e) => {
+        if (!navigator.onLine) {
+            e.preventDefault();
+            showToast(t('no_internet'), true);
+            return;
+        }
+        if (!sypMarketRate || !rates.TRY || !rates.RUB) { showToast(t('no_data'), true); return; }
+        const text = t('share_text', { syp: format(sypMarketRate,'SYP'), try: format(rates.TRY,'TRY'), rub: format(rates.RUB,'RUB') });
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    });
+
+    window.addEventListener('online', () => { updateNetworkIndicator(true); if (!loadCache()) fetchRates(); });
+    window.addEventListener('offline', () => updateNetworkIndicator(false));
+    updateNetworkIndicator(navigator.onLine);
+
+    const hasCache = loadCache();
+    applyLanguage();
+    if (localStorage.getItem('last_update_date') !== new Date().toDateString() || !hasCache) {
+        fetchRates().then(() => localStorage.setItem('last_update_date', new Date().toDateString()));
+    }
+})();
+</script>
+</body>
+</html>
